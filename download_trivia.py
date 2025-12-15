@@ -4,8 +4,9 @@ import time
 import sys
 import os
 import html
+import shutil
 
-max_size = 300
+max_size = 500
 base_url = "https://opentdb.com/api.php?amount=50&category={number}&difficulty={diff}&token={token}"
 difficulties = ["Easy", "Medium", "Hard"]
 trivia_categories = {
@@ -65,6 +66,12 @@ token_request = requests.get("https://opentdb.com/api_token.php?command=request"
 token = json.loads(token_request.text)["token"]
 
 base_path = sys.argv[1]
+for content in os.scandir(base_path):
+    if content.is_dir():
+        shutil.rmtree(content.path)
+    else:
+        os.unlink(content.path)
+
 for category, number in trivia_categories.items():
     for difficulty in difficulties:
 
@@ -92,5 +99,6 @@ for category, number in trivia_categories.items():
         output_dir = f"{base_path}/{category}/{difficulty}"
         os.makedirs(output_dir, exist_ok=True)
 
-        with open(f"{output_dir}/questions.json", "w", encoding="utf8") as file:
-            file.write(json.dumps(results, indent=2, ensure_ascii=False))
+        for index, result in enumerate(results):
+            with open(f"{output_dir}/{index}.json", "w", encoding="utf8") as file:
+                file.write(json.dumps(result, indent=2, ensure_ascii=False))

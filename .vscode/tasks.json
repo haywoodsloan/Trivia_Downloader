@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Create Question DB",
+      "type": "shell",
+      "command": ".venv/Scripts/python.exe download_trivia.py C:\\Users\\haywo\\Code\\source\\explorer-trivia\\db",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

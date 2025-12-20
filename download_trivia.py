@@ -2,11 +2,10 @@ import requests
 import json
 import time
 import sys
-import os
 import html
+import os
 import shutil
 
-max_size = 500
 base_url = "https://opentdb.com/api.php?amount=50&category={number}&difficulty={diff}&token={token}"
 difficulties = ["Easy", "Medium", "Hard"]
 trivia_categories = {
@@ -60,23 +59,29 @@ def trim(obj):
 
 
 if len(sys.argv) < 2:
-    raise "Must specify output folder"
+    raise "Must specify output directory"
 
 token_request = requests.get("https://opentdb.com/api_token.php?command=request")
 token = json.loads(token_request.text)["token"]
 
-base_path = sys.argv[1]
-for content in os.scandir(base_path):
-    if content.is_dir():
-        shutil.rmtree(content.path)
-    else:
-        os.unlink(content.path)
+base_dir = sys.argv[1]
+try:
+    for content in os.scandir(base_dir):
+        if content.is_dir():
+            shutil.rmtree(content.path)
+        else:
+            os.unlink(content.path)
+except:
+    pass
 
 for category, number in trivia_categories.items():
     for difficulty in difficulties:
 
-        results = []
-        while len(results) < max_size:
+        output_dir = f"{base_dir}/{category}/{difficulty}"
+        os.makedirs(output_dir, exist_ok=True)
+
+        index = 0
+        while True:
             request_url = base_url.format(number=number, diff=difficulty, token=token)
             response = requests.get(request_url.lower())
 
@@ -90,15 +95,14 @@ for category, number in trivia_categories.items():
                 elif parsed["response_code"] != 0:
                     raise Exception(f"Bad response code: {parsed["response_code"]}")
 
-                results += map(trim, map(decode, parsed["results"]))
+                results = map(trim, map(decode, parsed["results"]))
+                for result in results:
+                    with open(f"{output_dir}/{index}.json", "w", encoding="utf8") as file:
+                        json_str = json.dumps(result, ensure_ascii=False)
+                        file.write(json_str)
+                    index += 1
+
             except Exception as e:
                 print(e)
 
             time.sleep(5)
-
-        output_dir = f"{base_path}/{category}/{difficulty}"
-        os.makedirs(output_dir, exist_ok=True)
-
-        for index, result in enumerate(results):
-            with open(f"{output_dir}/{index}.json", "w", encoding="utf8") as file:
-                file.write(json.dumps(result, indent=2, ensure_ascii=False))
